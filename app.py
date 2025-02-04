@@ -81,7 +81,7 @@ if hora_chegada_str:
 st.markdown("---")
 col1, col2 = st.columns([1, 3])
 with col1:
-    st.image("foto_eu.jpg", width=100)  # Substitua pelo caminho da sua foto
+    st.image("eu.png", width=100)  # Substitua pelo caminho da sua foto
 with col2:
     st.markdown("🖊️ **Desenvolvido por Matheus Miranda Lopes**")
     st.markdown("[🔗 Meu LinkedIn](https://www.linkedin.com/in/matheus-miranda-31275b174/)", unsafe_allow_html=True)
