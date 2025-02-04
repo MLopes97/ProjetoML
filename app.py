@@ -35,60 +35,57 @@ jornada_horas = st.selectbox("Selecione sua jornada:", ["8h", "9h48min", "12h", 
 jornada_mapa = {"8h": timedelta(hours=8), "9h48min": timedelta(hours=9, minutes=48), "12h": timedelta(hours=12), "6h": timedelta(hours=6)}
 jornada = jornada_mapa[jornada_horas]
 
-# Usar session_state para controlar o valor da hora
-if 'hora_chegada_str' not in st.session_state:
-    st.session_state.hora_chegada_str = ""
+# Criar uma variável no session_state para armazenar o horário de chegada
+if "hora_chegada" not in st.session_state:
+    st.session_state.hora_chegada = ""
+
+# Função para validar a hora
+def validar_hora(hora_str):
+    try:
+        hora, minuto = map(int, hora_str.split(":"))
+        if 0 <= hora < 24 and 0 <= minuto < 60:
+            return True
+    except ValueError:
+        return False
+    return False
 
 # Entrada da hora de chegada
 col1, col2 = st.columns([2, 1])
 with col1:
-    hora_chegada_str = st.text_input("Digite a hora de chegada (HH:MM):", placeholder="Ex: 08:30", value=st.session_state.hora_chegada_str)
+    hora_chegada_str = st.text_input("Digite a hora de chegada (HH:MM):", placeholder="Ex: 08:30", value=st.session_state.hora_chegada)
 with col2:
     if st.button("Usar horário atual"):
-        # Preencher o campo de hora com a hora atual
-        st.session_state.hora_chegada_str = datetime.now().astimezone(br_tz).strftime("%H:%M")
+        st.session_state.hora_chegada = datetime.now().astimezone(br_tz).strftime("%H:%M")
+        hora_chegada_str = st.session_state.hora_chegada  # Atualiza a variável local para cálculo
+        st.rerun()  # Atualiza a interface corretamente
 
-# Opção de alerta de 5 minutos
-ativar_alerta = st.checkbox("🔔 Ativar alerta de 5 minutos antes")
-
+# Processamento da hora de saída
 if hora_chegada_str:
-    try:
-        # Converter entrada para datetime no fuso de Brasília corretamente
-        chegada_dt = br_tz.localize(datetime.strptime(hora_chegada_str, "%H:%M"))
-        
-        # Calcular horário de saída
+    if validar_hora(hora_chegada_str):
+        agora = datetime.now().astimezone(br_tz)
+        hora, minuto = map(int, hora_chegada_str.split(":"))
+        chegada_dt = agora.replace(hour=hora, minute=minuto, second=0, microsecond=0)
+
+        # Se a hora de chegada for maior que a hora atual, significa que começou no dia anterior
+        if chegada_dt > agora:
+            chegada_dt -= timedelta(days=1)
+
+        # Calcular horário de saída e tolerância
         hora_saida = chegada_dt + jornada
-        
-        # Calcular tolerância (5 minutos antes e depois)
         hora_saida_antes = hora_saida - timedelta(minutes=5)
         hora_saida_depois = hora_saida + timedelta(minutes=5)
 
-        # Calcular contagem regressiva
-        agora = datetime.now().astimezone(br_tz)
-        tempo_restante = hora_saida - agora
-        horas, minutos = divmod(int(tempo_restante.total_seconds()) // 60, 60)
-
-        # Exibir resultado
+        # Exibir horários fixos
         st.success(f"🔔 Você deve sair às **{hora_saida.strftime('%H:%M')}**")
         st.info(f"⏳ Tolerância: **{hora_saida_antes.strftime('%H:%M')}** até **{hora_saida_depois.strftime('%H:%M')}**")
-        
-        if tempo_restante.total_seconds() > 0:
-            st.warning(f"⏳ Tempo restante: **{horas}h {minutos}min**")
-            
-            # Alerta de 5 minutos antes
-            if ativar_alerta and tempo_restante.total_seconds() <= 300:  # 5 minutos = 300 segundos
-                st.error("🚨 Atenção! Faltam apenas 5 minutos para o fim do expediente!")
-        else:
-            st.error("⏰ Seu expediente já terminou!")
-    
-    except ValueError:
+    else:
         st.error("⚠️ Formato inválido! Digite no formato HH:MM, ex: 08:30")
 
 # Rodapé com Foto, Assinatura e LinkedIn
 st.markdown("---")
 col1, col2 = st.columns([1, 3])
 with col1:
-    st.image("eu.png", width=100)  # Substitua pelo caminho da sua foto
+    st.image("tech_lopes.png", width=100)  # Substitua pelo caminho da sua foto
 with col2:
     st.markdown("🖊️ **Desenvolvido por Matheus Miranda Lopes**")
     st.markdown("[🔗 Meu LinkedIn](https://www.linkedin.com/in/matheus-miranda-31275b174/)", unsafe_allow_html=True)
