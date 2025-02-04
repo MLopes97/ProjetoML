@@ -48,10 +48,13 @@ with col2:
         # Preencher o campo de hora com a hora atual
         st.session_state.hora_chegada_str = datetime.now().astimezone(br_tz).strftime("%H:%M")
 
+# Opção de alerta de 5 minutos
+ativar_alerta = st.checkbox("🔔 Ativar alerta de 5 minutos antes")
+
 if hora_chegada_str:
     try:
-        # Converter entrada para datetime no fuso de Brasília
-        chegada_dt = datetime.strptime(hora_chegada_str, "%H:%M").replace(tzinfo=br_tz)
+        # Converter entrada para datetime no fuso de Brasília corretamente
+        chegada_dt = br_tz.localize(datetime.strptime(hora_chegada_str, "%H:%M"))
         
         # Calcular horário de saída
         hora_saida = chegada_dt + jornada
@@ -71,6 +74,10 @@ if hora_chegada_str:
         
         if tempo_restante.total_seconds() > 0:
             st.warning(f"⏳ Tempo restante: **{horas}h {minutos}min**")
+            
+            # Alerta de 5 minutos antes
+            if ativar_alerta and tempo_restante.total_seconds() <= 300:  # 5 minutos = 300 segundos
+                st.error("🚨 Atenção! Faltam apenas 5 minutos para o fim do expediente!")
         else:
             st.error("⏰ Seu expediente já terminou!")
     
@@ -85,4 +92,5 @@ with col1:
 with col2:
     st.markdown("🖊️ **Desenvolvido por Matheus Miranda Lopes**")
     st.markdown("[🔗 Meu LinkedIn](https://www.linkedin.com/in/matheus-miranda-31275b174/)", unsafe_allow_html=True)
+
    
